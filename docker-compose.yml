@@ -27,5 +27,13 @@ services:
       - postgres
     restart: unless-stopped
 
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: [ "./bin/migrate", "-up" ]
+    depends_on:
+      - postgres
+
 volumes:
   pg-data:

@@ -1,10 +1,9 @@
 package routes
 
 import (
-	"backend/internal/datasources/repositories/postgres"
+	"backend/internal/container"
 	"backend/internal/http/handlers"
-	"backend/internal/services"
-	"github.com/jmoiron/sqlx"
+	"backend/internal/http/middlewares"
 	"github.com/labstack/echo/v4"
 )
 
@@ -13,17 +12,9 @@ type UsersRoute struct {
 	router       *echo.Group
 }
 
-func NewUsersRoute(
-	router *echo.Group,
-	db *sqlx.DB,
-) *UsersRoute {
-
-	usersRepository := postgres.NewPostgresUsersRepository(db)
-	usersService := services.NewUsersService(usersRepository)
-	usersHandler := handlers.NewUsersHandler(usersService)
-
+func NewUsersRoute(container *container.Container, router *echo.Group) *UsersRoute {
 	return &UsersRoute{
-		usersHandler: usersHandler,
+		usersHandler: container.UsersHandler,
 		router:       router,
 	}
 }
@@ -35,5 +26,6 @@ func (r *UsersRoute) Register() {
 	users.GET("/:id", r.usersHandler.FindByID)
 	users.POST("", r.usersHandler.Save)
 	users.PATCH("/:id", r.usersHandler.Update)
+	users.Use(middlewares.RequireAuth)
 	users.DELETE("/:id", r.usersHandler.Delete)
 }

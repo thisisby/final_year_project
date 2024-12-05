@@ -2,11 +2,13 @@ package bootstrap
 
 import (
 	"backend/internal/config"
+	"backend/internal/container"
 	"backend/internal/datasources/drivers"
 	"backend/internal/helpers"
 	"backend/internal/http/routes"
 	"backend/internal/utils"
 	"backend/pkg/httpserver"
+	"backend/pkg/jwt"
 	"backend/pkg/logger"
 	"fmt"
 	"github.com/jmoiron/sqlx"
@@ -15,6 +17,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 func MustRun() {
@@ -46,7 +49,7 @@ func MustRun() {
 			return nil
 		},
 	}))
-
+	jwt.MustInitialize(config.Config.JwtSecretKey, time.Minute*time.Duration(config.Config.JwtAccessTokenExpiresIn), time.Hour*time.Duration(config.Config.JwtRefreshTokenExpiresIn))
 	e.Validator = helpers.NewValidator()
 
 	v1 := e.Group("/api/v1")
@@ -77,6 +80,10 @@ func MustRun() {
 }
 
 func setupRoutes(e *echo.Group, conn *sqlx.DB) {
-	routes.NewUsersRoute(e, conn).Register()
+	cont := container.NewContainer(conn)
+
+	// Register routes
+	routes.NewUsersRoute(cont, e).Register()
+	routes.NewAuthRoute(cont, e).Register()
 	routes.NewHealthCheckRoute(e).Register()
 }

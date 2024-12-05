@@ -6,8 +6,9 @@ type CreateUsersRequest struct {
 }
 
 type UsersResponse struct {
-	ID    int    `json:"id"`
-	Email string `json:"email"`
+	ID       int    `json:"id"`
+	Email    string `json:"email"`
+	Password string `json:"_"`
 }
 
 type UpdateUsersRequest struct {

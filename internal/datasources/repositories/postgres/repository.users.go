@@ -49,6 +49,23 @@ func (r *postgresUsersRepository) FindByID(id int) (records.Users, error) {
 	return user, nil
 }
 
+func (r *postgresUsersRepository) FindByEmail(email string) (records.Users, error) {
+	query, args, err := squirrel.Select("*").
+		From("users").
+		PlaceholderFormat(squirrel.Dollar).
+		Where(squirrel.Eq{"email": email}).ToSql()
+	if err != nil {
+		return records.Users{}, helpers.PostgresErrorTransform(fmt.Errorf("postgresUsersRepository - FindByEmail - squirrel.Select: %w", err))
+	}
+
+	var user records.Users
+	if err := r.db.Get(&user, query, args...); err != nil {
+		return records.Users{}, helpers.PostgresErrorTransform(fmt.Errorf("postgresUsersRepository - FindByEmail - db.Get: %w", err))
+	}
+
+	return user, nil
+}
+
 func (r *postgresUsersRepository) Save(user records.Users) error {
 	query, args, err := squirrel.Insert("users").
 		Columns("email", "password", "created_at", "updated_at", "deleted_at").
@@ -77,7 +94,7 @@ func (r *postgresUsersRepository) Update(id int, users map[string]interface{}) e
 	if err != nil {
 		return helpers.PostgresErrorTransform(fmt.Errorf("postgresUsersRepository - Update - squirrel.Update: %w", err))
 	}
-	
+
 	_, err = r.db.Exec(query, args...)
 	if err != nil {
 		return helpers.PostgresErrorTransform(fmt.Errorf("postgresUsersRepository - Update - db.Exec: %w", err))

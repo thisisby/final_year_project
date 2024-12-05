@@ -1,7 +1,7 @@
 package helpers
 
 import (
-	"backend/internal/constants"
+	"backend/internal/datasources/repositories"
 	"database/sql"
 	"errors"
 	"github.com/lib/pq"
@@ -17,15 +17,15 @@ func PostgresErrorTransform(err error) error {
 	if ok {
 		switch pgErr.Code {
 		case "23505":
-			return constants.ErrorRowExists
+			return repositories.ErrorRowExists
 		case "23503":
-			return constants.ErrorForeignKeyViolation
+			return repositories.ErrorForeignKeyViolation
 		}
 	}
 
 	// no rows in result set
 	if errors.Is(err, sql.ErrNoRows) {
-		return constants.ErrorRowNotFound
+		return repositories.ErrorRowNotFound
 	}
 
 	return err

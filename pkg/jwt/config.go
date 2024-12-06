@@ -13,7 +13,7 @@ type Config struct {
 
 var defaultConfig *Config
 
-func MustInitialize(
+func MustInitializeConfig(
 	secretKey string,
 	accessTokenTTL,
 	refreshTokenTTL time.Duration,

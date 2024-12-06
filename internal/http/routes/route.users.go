@@ -22,10 +22,10 @@ func NewUsersRoute(container *container.Container, router *echo.Group) *UsersRou
 func (r *UsersRoute) Register() {
 	users := r.router.Group("/users")
 
+	users.Use(middlewares.RequireAuth)
 	users.GET("", r.usersHandler.FindAll)
 	users.GET("/:id", r.usersHandler.FindByID)
 	users.POST("", r.usersHandler.Save)
 	users.PATCH("/:id", r.usersHandler.Update)
-	users.Use(middlewares.RequireAuth)
 	users.DELETE("/:id", r.usersHandler.Delete)
 }

@@ -49,7 +49,7 @@ func MustRun() {
 			return nil
 		},
 	}))
-	jwt.MustInitialize(config.Config.JwtSecretKey, time.Minute*time.Duration(config.Config.JwtAccessTokenExpiresIn), time.Hour*time.Duration(config.Config.JwtRefreshTokenExpiresIn))
+	jwt.MustInitializeConfig(config.Config.JwtSecretKey, time.Minute*time.Duration(config.Config.JwtAccessTokenExpiresIn), time.Hour*time.Duration(config.Config.JwtRefreshTokenExpiresIn))
 	e.Validator = helpers.NewValidator()
 
 	v1 := e.Group("/api/v1")
@@ -85,5 +85,7 @@ func setupRoutes(e *echo.Group, conn *sqlx.DB) {
 	// Register routes
 	routes.NewUsersRoute(cont, e).Register()
 	routes.NewAuthRoute(cont, e).Register()
+	routes.NewExercisesRoute(cont, e).Register()
+
 	routes.NewHealthCheckRoute(e).Register()
 }

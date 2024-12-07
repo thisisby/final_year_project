@@ -18,6 +18,9 @@ type ExercisesRepository interface {
 	Save(exercise records.Exercises) error
 	Update(id int, exercise map[string]interface{}) error
 	Delete(id int) error
+	CreateCustomExercise(exercise records.Exercises, userID int) (int, error)
+	FindAllUserExercises(userID int) ([]records.Exercises, error)
+	FindAllWithWorkoutCheck(workoutID int) ([]records.ExercisesWithWorkoutCheck, error)
 }
 
 type ExercisesService struct {
@@ -121,4 +124,51 @@ func (s *ExercisesService) Delete(id int) (int, error) {
 	}
 
 	return http.StatusOK, nil
+}
+
+func (s *ExercisesService) CreateCustomExercise(createExerciseRequest data_transfers.CreateExercisesRequest, userID int) (int, int, error) {
+	var exerciseRecord records.Exercises
+	err := copier.Copy(&exerciseRecord, &createExerciseRequest)
+	if err != nil {
+		return 0, http.StatusInternalServerError, fmt.Errorf("service - CreateCustomExercise - copier.Copy: %w", err)
+	}
+
+	id, err := s.repository.CreateCustomExercise(exerciseRecord, userID)
+	if err != nil {
+		return 0, http.StatusInternalServerError, fmt.Errorf("service - CreateCustomExercise - repository.Save: %w", err)
+	}
+
+	return id, http.StatusCreated, nil
+}
+
+func (s *ExercisesService) FindAllUserExercises(userID int) ([]data_transfers.ExercisesResponse, int, error) {
+	var exercisesResponse []data_transfers.ExercisesResponse
+
+	exercises, err := s.repository.FindAllUserExercises(userID)
+	if err != nil {
+		return nil, http.StatusInternalServerError, fmt.Errorf("service - FindAllUserExercises - repository.FindAllUserExercises: %w", err)
+	}
+
+	err = copier.Copy(&exercisesResponse, &exercises)
+	if err != nil {
+		return nil, http.StatusInternalServerError, fmt.Errorf("service - FindAllUserExercises - copier.Copy: %w", err)
+	}
+
+	return exercisesResponse, http.StatusOK, nil
+}
+
+func (s *ExercisesService) FindAllWithWorkoutCheck(workoutID int) ([]data_transfers.ExercisesResponseWithWorkoutCheckResponse, int, error) {
+	var exercisesResponse []data_transfers.ExercisesResponseWithWorkoutCheckResponse
+
+	exercises, err := s.repository.FindAllWithWorkoutCheck(workoutID)
+	if err != nil {
+		return nil, http.StatusInternalServerError, fmt.Errorf("service - FindAllWithWorkoutCheck - repository.FindAllWithWorkoutCheck: %w", err)
+	}
+
+	err = copier.Copy(&exercisesResponse, &exercises)
+	if err != nil {
+		return nil, http.StatusInternalServerError, fmt.Errorf("service - FindAllWithWorkoutCheck - copier.Copy: %w", err)
+	}
+
+	return exercisesResponse, http.StatusOK, nil
 }

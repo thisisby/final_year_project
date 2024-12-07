@@ -19,7 +19,11 @@ func NewPostgresUsersRepository(db *sqlx.DB) services.UsersRepository {
 }
 
 func (r *postgresUsersRepository) FindAll() ([]records.Users, error) {
-	query, args, err := squirrel.Select("*").From("users").ToSql()
+	query, args, err := squirrel.
+		Select("*").
+		From("users").
+		OrderBy("id ASC").
+		ToSql()
 	if err != nil {
 		return nil, helpers.PostgresErrorTransform(fmt.Errorf("postgresUsersRepository - FindAll - squirrel.Select: %w", err))
 	}

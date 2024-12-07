@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"backend/internal/constants"
 	"backend/internal/helpers"
 	"backend/internal/http/data_transfers"
 	"backend/internal/services"
 	"backend/pkg/convert"
+	"backend/pkg/jwt"
 	"github.com/labstack/echo/v4"
 	"net/http"
 )
@@ -111,4 +113,54 @@ func (h *ExercisesHandler) Delete(ctx echo.Context) error {
 	}
 
 	return NewSuccessResponse(ctx, statusCode, "exercise deleted successfully", nil)
+}
+
+func (h *ExercisesHandler) CreateCustomExercise(ctx echo.Context) error {
+	var createExerciseRequest data_transfers.CreateExercisesRequest
+	jwtClaims := ctx.Get(constants.CtxAuthenticatedUserKey).(*jwt.Claims)
+
+	err := helpers.BindAndValidate(ctx, &createExerciseRequest)
+	if err != nil {
+		return NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
+	}
+
+	id, statusCode, err := h.service.CreateCustomExercise(createExerciseRequest, jwtClaims.UserID)
+	if err != nil {
+		return NewErrorResponse(ctx, statusCode, err.Error())
+	}
+
+	return NewSuccessResponse(ctx, statusCode, "custom exercise created successfully", map[string]int{"id": id})
+}
+
+func (h *ExercisesHandler) FindAllUserExercises(ctx echo.Context) error {
+	var exercises []data_transfers.ExercisesResponse
+	userIDS := ctx.Param("userID")
+	userID, err := convert.StringToInt(userIDS)
+	if err != nil {
+		return NewErrorResponse(ctx, http.StatusBadRequest, "Invalid ID")
+	}
+
+	exercises, statusCode, err := h.service.FindAllUserExercises(userID)
+	if err != nil {
+		return NewErrorResponse(ctx, statusCode, err.Error())
+	}
+
+	return NewSuccessResponse(ctx, statusCode, "exercises fetched successfully", exercises)
+}
+
+func (h *ExercisesHandler) FindAllWithWorkoutCheck(ctx echo.Context) error {
+	var exercises []data_transfers.ExercisesResponseWithWorkoutCheckResponse
+
+	workoutIDS := ctx.Param("workoutID")
+	workoutID, err := convert.StringToInt(workoutIDS)
+	if err != nil {
+		return NewErrorResponse(ctx, http.StatusBadRequest, "Invalid ID")
+	}
+
+	exercises, statusCode, err := h.service.FindAllWithWorkoutCheck(workoutID)
+	if err != nil {
+		return NewErrorResponse(ctx, statusCode, err.Error())
+	}
+
+	return NewSuccessResponse(ctx, statusCode, "exercises fetched successfully", exercises)
 }

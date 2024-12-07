@@ -35,6 +35,4 @@ func (r *WorkoutsRoute) Register() {
 	workouts.GET("/:id", r.workoutHandler.FindByID)
 	workouts.PATCH("/:id", r.workoutHandler.Update)
 	workouts.DELETE("/:id", r.workoutHandler.Delete)
-	workouts.POST("/:workoutID/exercises", r.workoutHandler.AddExercise)
-	workouts.DELETE("/:workoutID/exercises", r.workoutHandler.RemoveExercise)
 }

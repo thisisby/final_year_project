@@ -26,6 +26,15 @@ func (r *WorkoutsRoute) Register() {
 	users.Use(middlewares.RequireAuth)
 	workouts.Use(middlewares.RequireAuth)
 
+	// users routes
 	users.GET("/:userID/workouts", r.workoutHandler.FindAllByOwnerID)
+
+	// workouts routes
 	workouts.POST("", r.workoutHandler.Save)
+	workouts.GET("", r.workoutHandler.FindAll)
+	workouts.GET("/:id", r.workoutHandler.FindByID)
+	workouts.PATCH("/:id", r.workoutHandler.Update)
+	workouts.DELETE("/:id", r.workoutHandler.Delete)
+	workouts.POST("/:workoutID/exercises", r.workoutHandler.AddExercise)
+	workouts.DELETE("/:workoutID/exercises", r.workoutHandler.RemoveExercise)
 }

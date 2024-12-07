@@ -6,15 +6,28 @@ import (
 )
 
 type CreateWorkoutRequest struct {
-	Name          string   `json:"name"`
-	Description   string   `json:"description"`
-	ExerciseNames []string `json:"exercise_names"`
+	Title         string   `json:"title" validate:"required"`
+	Description   string   `json:"description" validate:"omitempty"`
+	ExerciseNames []string `json:"exercise_names" validate:"required"`
 	OwnerID       int      `json:"-"`
+}
+
+type UpdateWorkoutRequest struct {
+	Title       *string `json:"title" validate:"omitempty"`
+	Description *string `json:"description" validate:"omitempty"`
+}
+
+type AddExercisesRequest struct {
+	ExerciseNames []string `json:"exercise_names"`
+}
+
+type DeleteExerciseRequest struct {
+	ExerciseIDs []int `json:"exercise_ids"`
 }
 
 type WorkoutsResponse struct {
 	ID          int                        `json:"id"`
-	Name        string                     `json:"name"`
+	Title       string                     `json:"title"`
 	Description string                     `json:"description"`
 	OwnerID     int                        `json:"owner_id"`
 	Exercises   []WorkoutExercisesResponse `json:"exercises"`

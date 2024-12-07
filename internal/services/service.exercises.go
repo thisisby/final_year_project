@@ -99,6 +99,9 @@ func (s *ExercisesService) Save(exercise data_transfers.CreateExercisesRequest) 
 
 func (s *ExercisesService) Update(id int, exercise data_transfers.UpdateExercisesRequest) (int, error) {
 	exerciseMap, err := convert.StructToMap(exercise)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("service - Update - convert.StructToMap: %w", err)
+	}
 
 	err = s.repository.Update(id, exerciseMap)
 	if err != nil {

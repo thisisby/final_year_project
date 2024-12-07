@@ -102,6 +102,9 @@ func (s *UsersService) Save(userRequest data_transfers.CreateUsersRequest) (int,
 
 func (s *UsersService) Update(id int, user data_transfers.UpdateUsersRequest) (int, error) {
 	userMap, err := convert.StructToMap(user)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("service - Update - convert.StructToMap: %w", err)
+	}
 
 	err = s.repository.Update(id, userMap)
 	if err != nil {

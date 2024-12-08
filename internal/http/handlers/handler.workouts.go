@@ -51,6 +51,10 @@ func (h *WorkoutsHandler) FindByID(ctx echo.Context) error {
 
 func (h *WorkoutsHandler) FindAllByOwnerID(ctx echo.Context) error {
 	var workouts []data_transfers.WorkoutsResponse
+	var statusCode int
+	var err error
+
+	jwtClaims := ctx.Get(constants.CtxAuthenticatedUserKey).(*jwt.Claims)
 
 	userIDStr := ctx.Param("userID")
 	userID, err := convert.StringToInt(userIDStr)
@@ -58,9 +62,16 @@ func (h *WorkoutsHandler) FindAllByOwnerID(ctx echo.Context) error {
 		return NewErrorResponse(ctx, http.StatusBadRequest, "Invalid user ID")
 	}
 
-	workouts, statusCode, err := h.service.FindAllByOwnerID(userID)
-	if err != nil {
-		return NewErrorResponse(ctx, statusCode, err.Error())
+	if jwtClaims.UserID == userID {
+		workouts, statusCode, err = h.service.FindAllByCurrentUserID(userID)
+		if err != nil {
+			return NewErrorResponse(ctx, statusCode, err.Error())
+		}
+	} else {
+		workouts, statusCode, err = h.service.FindAllByOwnerID(userID)
+		if err != nil {
+			return NewErrorResponse(ctx, statusCode, err.Error())
+		}
 	}
 
 	return NewSuccessResponse(ctx, statusCode, "workouts fetched successfully", workouts)
@@ -129,4 +140,56 @@ func (h *WorkoutsHandler) Delete(ctx echo.Context) error {
 	}
 
 	return NewSuccessResponse(ctx, statusCode, "workout deleted successfully", nil)
+}
+
+func (h *WorkoutsHandler) Copy(ctx echo.Context) error {
+	jwtClaims := ctx.Get(constants.CtxAuthenticatedUserKey).(*jwt.Claims)
+
+	idStr := ctx.Param("workoutID")
+	workoutID, err := convert.StringToInt(idStr)
+	if err != nil {
+		return NewErrorResponse(ctx, http.StatusBadRequest, "Invalid workout ID")
+	}
+
+	workout, statusCode, err := h.service.FindByID(workoutID)
+	if err != nil {
+		return NewErrorResponse(ctx, statusCode, err.Error())
+	}
+
+	if workout.Price > float64(0) || workout.IsPrivate || workout.OwnerID != jwtClaims.UserID {
+		return NewErrorResponse(ctx, http.StatusForbidden, "You cannot copy a paid or private workout")
+	}
+
+	id, statusCode, err := h.service.Copy(workoutID, jwtClaims.UserID)
+	if err != nil {
+		return NewErrorResponse(ctx, statusCode, err.Error())
+	}
+
+	return NewSuccessResponse(ctx, statusCode, "workout copied successfully", map[string]int{"id": id})
+}
+
+func (h *WorkoutsHandler) PurchaseWorkout(ctx echo.Context) error {
+	jwtClaims := ctx.Get(constants.CtxAuthenticatedUserKey).(*jwt.Claims)
+
+	idStr := ctx.Param("workoutID")
+	workoutID, err := convert.StringToInt(idStr)
+	if err != nil {
+		return NewErrorResponse(ctx, http.StatusBadRequest, "Invalid workout ID")
+	}
+
+	workout, statusCode, err := h.service.FindByID(workoutID)
+	if err != nil {
+		return NewErrorResponse(ctx, statusCode, err.Error())
+	}
+
+	if workout.IsPrivate || workout.Price <= float64(0) {
+		return NewErrorResponse(ctx, http.StatusForbidden, "You cannot purchase a free or private workout")
+	}
+
+	id, statusCode, err := h.service.PurchaseWorkout(workoutID, jwtClaims.UserID)
+	if err != nil {
+		return NewErrorResponse(ctx, statusCode, err.Error())
+	}
+
+	return NewSuccessResponse(ctx, statusCode, "workout purchased successfully", map[string]int{"id": id})
 }

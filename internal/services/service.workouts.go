@@ -15,9 +15,11 @@ type WorkoutsRepository interface {
 	FindAll() ([]records.Workouts, error)
 	FindByID(id int) (records.Workouts, error)
 	FindAllByOwnerID(ownerID int) ([]records.Workouts, error)
+	FindAllByCurrentUserID(ownerID int) ([]records.Workouts, error)
 	Save(workout records.Workouts) (int, error)
 	Update(id int, workout map[string]interface{}) error
 	Delete(id int) error
+	Copy(id int, userID int) (int, error)
 }
 
 type WorkoutsService struct {
@@ -49,11 +51,13 @@ func (s *WorkoutsService) FindAll() ([]data_transfers.WorkoutsResponse, int, err
 	}
 
 	for i, workout := range workoutsResponse {
-		workoutExercises, statusCode, err := s.workoutExercisesService.FindAllByWorkoutID(workout.ID)
-		if err != nil {
-			return nil, statusCode, err
+		if workout.Price == float64(0) {
+			workoutExercises, statusCode, err := s.workoutExercisesService.FindAllByWorkoutID(workout.ID)
+			if err != nil {
+				return nil, statusCode, err
+			}
+			workoutsResponse[i].Exercises = workoutExercises
 		}
-		workoutsResponse[i].Exercises = workoutExercises
 	}
 
 	return workoutsResponse, http.StatusOK, nil
@@ -75,17 +79,47 @@ func (s *WorkoutsService) FindByID(id int) (data_transfers.WorkoutsResponse, int
 		return workoutResponse, http.StatusInternalServerError, err
 	}
 
-	workoutExercises, statusCode, err := s.workoutExercisesService.FindAllByWorkoutID(workout.ID)
-	if err != nil {
-		return workoutResponse, statusCode, err
+	if workout.Price == float64(0) {
+		workoutExercises, statusCode, err := s.workoutExercisesService.FindAllByWorkoutID(workout.ID)
+		if err != nil {
+			return workoutResponse, statusCode, err
+		}
+		workoutResponse.Exercises = workoutExercises
 	}
-
-	workoutResponse.Exercises = workoutExercises
 
 	return workoutResponse, http.StatusOK, nil
 }
 
 func (s *WorkoutsService) FindAllByOwnerID(ownerID int) ([]data_transfers.WorkoutsResponse, int, error) {
+	var workoutsResponse []data_transfers.WorkoutsResponse
+
+	workouts, err := s.repository.FindAllByOwnerID(ownerID)
+	if err != nil {
+		if errors.Is(err, repositories.ErrorRowNotFound) {
+			return nil, http.StatusNotFound, errors.New("workouts not found")
+		}
+		return nil, http.StatusInternalServerError, err
+	}
+
+	err = copier.Copy(&workoutsResponse, &workouts)
+	if err != nil {
+		return nil, http.StatusInternalServerError, err
+	}
+
+	for i, workout := range workoutsResponse {
+		if workout.Price == float64(0) {
+			workoutExercises, statusCode, err := s.workoutExercisesService.FindAllByWorkoutID(workout.ID)
+			if err != nil {
+				return nil, statusCode, err
+			}
+			workoutsResponse[i].Exercises = workoutExercises
+		}
+	}
+
+	return workoutsResponse, http.StatusOK, nil
+}
+
+func (s *WorkoutsService) FindAllByCurrentUserID(ownerID int) ([]data_transfers.WorkoutsResponse, int, error) {
 	var workoutsResponse []data_transfers.WorkoutsResponse
 
 	workouts, err := s.repository.FindAllByOwnerID(ownerID)
@@ -148,4 +182,24 @@ func (s *WorkoutsService) Delete(id int) (int, error) {
 	}
 
 	return http.StatusOK, nil
+}
+
+func (s *WorkoutsService) Copy(id int, userID int) (int, int, error) {
+	id, err := s.repository.Copy(id, userID)
+	if err != nil {
+		return 0, http.StatusInternalServerError, err
+	}
+
+	return id, http.StatusCreated, nil
+}
+
+func (s *WorkoutsService) PurchaseWorkout(workoutID int, userID int) (int, int, error) {
+	// TODO: purchase workout
+
+	id, err := s.repository.Copy(workoutID, userID)
+	if err != nil {
+		return 0, http.StatusInternalServerError, err
+	}
+
+	return id, http.StatusCreated, nil
 }

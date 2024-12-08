@@ -35,4 +35,6 @@ func (r *WorkoutsRoute) Register() {
 	workouts.GET("/:id", r.workoutHandler.FindByID)
 	workouts.PATCH("/:id", r.workoutHandler.Update)
 	workouts.DELETE("/:id", r.workoutHandler.Delete)
+	workouts.GET("/:workoutID/copy", r.workoutHandler.Copy)
+	workouts.GET("/:workoutID/purchase", r.workoutHandler.PurchaseWorkout)
 }

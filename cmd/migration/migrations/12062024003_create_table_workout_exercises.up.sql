@@ -7,7 +7,9 @@ CREATE TABLE IF NOT EXISTS workout_exercises (
     exercise_id INT NOT NULL REFERENCES exercises(id) ON DELETE CASCADE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT NULL,
-    deleted_at TIMESTAMP DEFAULT NULL
+    deleted_at TIMESTAMP DEFAULT NULL,
+
+    UNIQUE (workout_id, exercise_id, owner_id)
 );
 
 

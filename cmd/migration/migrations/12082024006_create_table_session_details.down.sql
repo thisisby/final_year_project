@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS session_details;
+DROP TABLE IF EXISTS session_details CASCADE;

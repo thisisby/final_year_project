@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS activitiy_groups;
+DROP TABLE IF EXISTS activitiy_groups CASCADE;

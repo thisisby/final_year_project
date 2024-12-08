@@ -18,6 +18,7 @@ type Container struct {
 	ExerciseSetsRepository     services.ExerciseSetsRepository
 	ActivityGroupsRepository   services.ActivityGroupsRepository
 	ActivitiesRepository       services.ActivitiesRepository
+	SessionsRepository         services.SessionsRepository // New repository
 
 	// Services
 	UsersService            *services.UsersService
@@ -28,6 +29,7 @@ type Container struct {
 	ExerciseSetsService     *services.ExerciseSetsService
 	ActivityGroupsService   *services.ActivityGroupsService
 	ActivitiesService       *services.ActivitiesService
+	SessionsService         *services.SessionsService // New service
 
 	// Handlers
 	UsersHandler            *handlers.UsersHandler
@@ -38,6 +40,7 @@ type Container struct {
 	ExerciseSetsHandler     *handlers.ExerciseSetsHandler
 	ActivityGroupsHandler   *handlers.ActivityGroupsHandler
 	ActivitiesHandler       *handlers.ActivitiesHandler
+	SessionsHandler         *handlers.SessionsHandler // New handler
 }
 
 func NewContainer(db *sqlx.DB) *Container {
@@ -50,6 +53,7 @@ func NewContainer(db *sqlx.DB) *Container {
 	exerciseSetsRepository := postgres.NewPostgresExerciseSetsRepository(db)
 	activityGroupsRepository := postgres.NewPostgresActivityGroupsRepository(db)
 	activitiesRepository := postgres.NewPostgresActivitiesRepository(db)
+	sessionsRepository := postgres.NewPostgresSessionsRepository(db)
 
 	// Initialize services
 	usersService := services.NewUsersService(usersRepository)
@@ -61,6 +65,7 @@ func NewContainer(db *sqlx.DB) *Container {
 	exerciseSetsService := services.NewExerciseSetsService(exerciseSetsRepository)
 	activityGroupsService := services.NewActivityGroupsService(activityGroupsRepository)
 	activitiesService := services.NewActivitiesService(activitiesRepository)
+	sessionsService := services.NewSessionsService(sessionsRepository) // New service
 
 	// Initialize handlers
 	usersHandler := handlers.NewUsersHandler(usersService)
@@ -71,6 +76,7 @@ func NewContainer(db *sqlx.DB) *Container {
 	exerciseSetsHandler := handlers.NewExerciseSetsHandler(exerciseSetsService)
 	activityGroupsHandler := handlers.NewActivityGroupsHandler(activityGroupsService)
 	activitiesHandler := handlers.NewActivitiesHandler(activitiesService)
+	sessionsHandler := handlers.NewSessionsHandler(sessionsService) // New handler
 
 	return &Container{
 		DB: db,
@@ -83,6 +89,7 @@ func NewContainer(db *sqlx.DB) *Container {
 		ExerciseSetsRepository:     exerciseSetsRepository,
 		ActivityGroupsRepository:   activityGroupsRepository,
 		ActivitiesRepository:       activitiesRepository,
+		SessionsRepository:         sessionsRepository, // New repository
 
 		// Services
 		UsersService:            usersService,
@@ -93,6 +100,7 @@ func NewContainer(db *sqlx.DB) *Container {
 		ExerciseSetsService:     exerciseSetsService,
 		ActivityGroupsService:   activityGroupsService,
 		ActivitiesService:       activitiesService,
+		SessionsService:         sessionsService, // New service
 
 		// Handlers
 		UsersHandler:            usersHandler,
@@ -103,5 +111,6 @@ func NewContainer(db *sqlx.DB) *Container {
 		ExerciseSetsHandler:     exerciseSetsHandler,
 		ActivityGroupsHandler:   activityGroupsHandler,
 		ActivitiesHandler:       activitiesHandler,
+		SessionsHandler:         sessionsHandler, // New handler
 	}
 }

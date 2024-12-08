@@ -91,6 +91,7 @@ func setupRoutes(e *echo.Group, conn *sqlx.DB) {
 	routes.NewExerciseSetsRoute(cont, e).Register()
 	routes.NewActivityGroupsRoute(cont, e).Register()
 	routes.NewActivitiesRoute(cont, e).Register()
+	routes.NewSessionsRoute(cont, e).Register()
 
 	routes.NewHealthCheckRoute(e).Register()
 }

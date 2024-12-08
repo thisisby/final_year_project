@@ -15,6 +15,7 @@ type Container struct {
 	ExercisesRepository        services.ExercisesRepository
 	WorkoutsRepository         services.WorkoutsRepository
 	WorkoutExercisesRepository services.WorkoutExercisesRepository
+	ExerciseSetsRepository     services.ExerciseSetsRepository
 
 	// Services
 	UsersService            *services.UsersService
@@ -22,6 +23,7 @@ type Container struct {
 	ExercisesService        *services.ExercisesService
 	WorkoutsService         *services.WorkoutsService
 	WorkoutExercisesService *services.WorkoutExercisesService
+	ExerciseSetsService     *services.ExerciseSetsService
 
 	// Handlers
 	UsersHandler            *handlers.UsersHandler
@@ -29,6 +31,7 @@ type Container struct {
 	ExercisesHandler        *handlers.ExercisesHandler
 	WorkoutsHandler         *handlers.WorkoutsHandler
 	WorkoutExercisesHandler *handlers.WorkoutExercisesHandler
+	ExerciseSetsHandler     *handlers.ExerciseSetsHandler
 }
 
 func NewContainer(db *sqlx.DB) *Container {
@@ -38,6 +41,7 @@ func NewContainer(db *sqlx.DB) *Container {
 	exercisesRepository := postgres.NewPostgresExercisesRepository(db)
 	workoutsRepository := postgres.NewPostgresWorkoutsRepository(db)
 	workoutExercisesRepository := postgres.NewPostgresWorkoutExercisesRepository(db)
+	exerciseSetsRepository := postgres.NewPostgresExerciseSetsRepository(db)
 
 	// Initialize services
 	usersService := services.NewUsersService(usersRepository)
@@ -46,6 +50,7 @@ func NewContainer(db *sqlx.DB) *Container {
 	exercisesService := services.NewExercisesService(exercisesRepository)
 	workoutExercisesService := services.NewWorkoutExercisesService(workoutExercisesRepository)
 	workoutsService := services.NewWorkoutsService(workoutsRepository, workoutExercisesService)
+	exerciseSetsService := services.NewExerciseSetsService(exerciseSetsRepository)
 
 	// Initialize handlers
 	usersHandler := handlers.NewUsersHandler(usersService)
@@ -53,6 +58,7 @@ func NewContainer(db *sqlx.DB) *Container {
 	exercisesHandler := handlers.NewExercisesHandler(exercisesService)
 	workoutsHandler := handlers.NewWorkoutsHandler(workoutsService)
 	workoutExercisesHandler := handlers.NewWorkoutExercisesHandler(workoutExercisesService)
+	exerciseSetsHandler := handlers.NewExerciseSetsHandler(exerciseSetsService)
 
 	return &Container{
 		DB: db,
@@ -62,6 +68,7 @@ func NewContainer(db *sqlx.DB) *Container {
 		ExercisesRepository:        exercisesRepository,
 		WorkoutsRepository:         workoutsRepository,
 		WorkoutExercisesRepository: workoutExercisesRepository,
+		ExerciseSetsRepository:     exerciseSetsRepository,
 
 		// Services
 		UsersService:            usersService,
@@ -69,6 +76,7 @@ func NewContainer(db *sqlx.DB) *Container {
 		ExercisesService:        exercisesService,
 		WorkoutsService:         workoutsService,
 		WorkoutExercisesService: workoutExercisesService,
+		ExerciseSetsService:     exerciseSetsService,
 
 		// Handlers
 		UsersHandler:            usersHandler,
@@ -76,5 +84,6 @@ func NewContainer(db *sqlx.DB) *Container {
 		ExercisesHandler:        exercisesHandler,
 		WorkoutsHandler:         workoutsHandler,
 		WorkoutExercisesHandler: workoutExercisesHandler,
+		ExerciseSetsHandler:     exerciseSetsHandler,
 	}
 }

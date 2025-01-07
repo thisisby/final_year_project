@@ -20,6 +20,7 @@ type WorkoutsRepository interface {
 	Update(id int, workout map[string]interface{}) error
 	Delete(id int) error
 	Copy(id int, userID int) (int, error)
+	FindAllWithFilters(params repositories.QueryParams) ([]records.Workouts, int, error)
 }
 
 type WorkoutsService struct {
@@ -202,4 +203,33 @@ func (s *WorkoutsService) PurchaseWorkout(workoutID int, userID int) (int, int, 
 	}
 
 	return id, http.StatusCreated, nil
+}
+
+func (s *WorkoutsService) FindAllWithFilters(params repositories.QueryParams) ([]data_transfers.WorkoutsResponse, int, int, error) {
+	var workoutsResponse []data_transfers.WorkoutsResponse
+
+	workouts, total, err := s.repository.FindAllWithFilters(params)
+	if err != nil {
+		if errors.Is(err, repositories.ErrorRowNotFound) {
+			return nil, 0, http.StatusNotFound, errors.New("workouts not found")
+		}
+		return nil, 0, http.StatusInternalServerError, err
+	}
+
+	err = copier.Copy(&workoutsResponse, &workouts)
+	if err != nil {
+		return nil, 0, http.StatusInternalServerError, err
+	}
+
+	for i, workout := range workoutsResponse {
+		if workout.Price == float64(0) {
+			workoutExercises, statusCode, err := s.workoutExercisesService.FindAllByWorkoutID(workout.ID)
+			if err != nil {
+				return nil, 0, statusCode, err
+			}
+			workoutsResponse[i].Exercises = workoutExercises
+		}
+	}
+
+	return workoutsResponse, total, http.StatusOK, nil
 }

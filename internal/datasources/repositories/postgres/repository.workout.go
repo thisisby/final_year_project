@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"backend/internal/datasources/records"
+	"backend/internal/datasources/repositories"
 	"backend/internal/helpers"
 	"backend/internal/services"
 	"fmt"
@@ -242,4 +243,52 @@ func (r *postgresWorkoutsRepository) Copy(id int, userID int) (int, error) {
 	}
 
 	return workoutID, nil
+}
+
+func (r *postgresWorkoutsRepository) FindAllWithFilters(params repositories.QueryParams) ([]records.Workouts, int, error) {
+	querySelectWorkouts := squirrel.
+		Select("*").
+		From("workouts").
+		PlaceholderFormat(squirrel.Dollar)
+
+	queryCountWorkouts := squirrel.
+		Select("COUNT(*)").
+		From("workouts").
+		PlaceholderFormat(squirrel.Dollar)
+
+	querySelectWorkouts = repositories.ApplyFilters(querySelectWorkouts, params.Filters)
+	queryCountWorkouts = repositories.ApplyFilters(queryCountWorkouts, params.Filters)
+
+	querySelectWorkouts = querySelectWorkouts.
+		Where(squirrel.Eq{"is_private": false}).
+		OrderBy("id ASC")
+
+	queryCountWorkouts = queryCountWorkouts.
+		Where(squirrel.Eq{"is_private": false})
+
+	var total int
+	query, args, err := queryCountWorkouts.ToSql()
+	if err != nil {
+		return nil, 0, helpers.PostgresErrorTransform(fmt.Errorf("postgresWorkoutsRepository - FindAllWithFilters - squirrel.Select: %w", err))
+	}
+
+	if err := r.db.Get(&total, query, args...); err != nil {
+		return nil, 0, helpers.PostgresErrorTransform(fmt.Errorf("postgresWorkoutsRepository - FindAllWithFilters - r.db.Get: %w", err))
+	}
+
+	if params.Pagination.Limit > 0 {
+		querySelectWorkouts = repositories.ApplyPagination(querySelectWorkouts, params.Pagination.Page, params.Pagination.Limit)
+	}
+
+	query, args, err = querySelectWorkouts.ToSql()
+	if err != nil {
+		return nil, 0, helpers.PostgresErrorTransform(fmt.Errorf("postgresWorkoutsRepository - FindAllWithFilters - squirrel.Select: %w", err))
+	}
+
+	var workouts []records.Workouts
+	if err := r.db.Select(&workouts, query, args...); err != nil {
+		return nil, 0, helpers.PostgresErrorTransform(fmt.Errorf("postgresWorkoutsRepository - FindAllWithFilters - r.db.Select: %w", err))
+	}
+
+	return workouts, total, nil
 }

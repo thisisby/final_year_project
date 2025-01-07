@@ -32,6 +32,7 @@ type Container struct {
 	ActivitiesService       *services.ActivitiesService
 	SessionsService         *services.SessionsService
 	SessionDetailsService   *services.SessionDetailsService
+	AnalyticsService        *services.AnalyticsService
 
 	// Handlers
 	UsersHandler            *handlers.UsersHandler
@@ -44,6 +45,7 @@ type Container struct {
 	ActivitiesHandler       *handlers.ActivitiesHandler
 	SessionsHandler         *handlers.SessionsHandler
 	SessionDetailsHandler   *handlers.SessionDetailsHandler
+	AnalyticsHandler        *handlers.AnalyticsHandler
 }
 
 func NewContainer(db *sqlx.DB) *Container {
@@ -71,6 +73,7 @@ func NewContainer(db *sqlx.DB) *Container {
 	activitiesService := services.NewActivitiesService(activitiesRepository)
 	sessionsService := services.NewSessionsService(sessionsRepository)
 	sessionDetailsService := services.NewSessionDetailsService(sessionDetailsRepository)
+	analyticsService := services.NewAnalyticsService(exerciseSetsRepository, sessionsRepository)
 
 	// Initialize handlers
 	usersHandler := handlers.NewUsersHandler(usersService)
@@ -83,6 +86,7 @@ func NewContainer(db *sqlx.DB) *Container {
 	activitiesHandler := handlers.NewActivitiesHandler(activitiesService)
 	sessionsHandler := handlers.NewSessionsHandler(sessionsService)
 	sessionDetailsHandler := handlers.NewSessionDetailsHandler(sessionDetailsService)
+	analyticsHandler := handlers.NewAnalyticsHandler(analyticsService)
 
 	return &Container{
 		DB: db,
@@ -109,6 +113,7 @@ func NewContainer(db *sqlx.DB) *Container {
 		ActivitiesService:       activitiesService,
 		SessionsService:         sessionsService,
 		SessionDetailsService:   sessionDetailsService,
+		AnalyticsService:        analyticsService,
 
 		// Handlers
 		UsersHandler:            usersHandler,
@@ -121,5 +126,6 @@ func NewContainer(db *sqlx.DB) *Container {
 		ActivitiesHandler:       activitiesHandler,
 		SessionsHandler:         sessionsHandler,
 		SessionDetailsHandler:   sessionDetailsHandler,
+		AnalyticsHandler:        analyticsHandler,
 	}
 }

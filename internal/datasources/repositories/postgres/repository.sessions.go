@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
+	"time"
 )
 
 type postgresSessionsRepository struct {
@@ -128,4 +129,64 @@ func (r *postgresSessionsRepository) Delete(id int) error {
 	}
 
 	return nil
+}
+
+func (r *postgresSessionsRepository) FindAllByStartTime(ownerID int, createdAt time.Time) ([]records.Sessions, error) {
+	query, args, err := squirrel.
+		Select(`
+			sessions.*,
+			activities.id AS "activity.id",
+			activities.created_at AS "activity.created_at",
+			activities.updated_at AS "activity.updated_at",
+			activities.deleted_at AS "activity.deleted_at",
+			activities.name AS "activity.name",
+			activities.activity_group_id AS "activity.activity_group_id"
+		`).
+		From("sessions").
+		LeftJoin("activities ON sessions.activity_id = activities.id").
+		Where(squirrel.Eq{"sessions.owner_id": ownerID}).
+		Where(squirrel.Expr("DATE(sessions.start_time) = ?", createdAt.Format("2006-01-02"))).
+		PlaceholderFormat(squirrel.Dollar).
+		ToSql()
+	if err != nil {
+		return []records.Sessions{}, helpers.PostgresErrorTransform(fmt.Errorf("postgresSessionsRepository - FindAllByStartTime - squirrel: %w", err))
+	}
+
+	var sessions []records.Sessions
+	if err := r.db.Select(&sessions, query, args...); err != nil {
+		return []records.Sessions{}, helpers.PostgresErrorTransform(fmt.Errorf("postgresSessionsRepository - FindAllByStartTime - db.Select: %w", err))
+	}
+
+	fmt.Printf("sessions: %v\n", sessions)
+	return sessions, nil
+}
+
+func (r *postgresSessionsRepository) FindAllInDateRange(ownerID int, startDate time.Time, endDate time.Time) ([]records.Sessions, error) {
+	query, args, err := squirrel.
+		Select(`
+			sessions.*,
+			activities.id AS "activity.id",
+			activities.created_at AS "activity.created_at",
+			activities.updated_at AS "activity.updated_at",
+			activities.deleted_at AS "activity.deleted_at",
+			activities.name AS "activity.name",
+			activities.activity_group_id AS "activity.activity_group_id"
+		`).
+		From("sessions").
+		LeftJoin("activities ON sessions.activity_id = activities.id").
+		Where(squirrel.Eq{"sessions.owner_id": ownerID}).
+		Where(squirrel.Expr("DATE(sessions.start_time) >= ?", startDate.Format("2006-01-02"))).
+		Where(squirrel.Expr("DATE(sessions.start_time) <= ?", endDate.Format("2006-01-02"))).
+		PlaceholderFormat(squirrel.Dollar).
+		ToSql()
+	if err != nil {
+		return []records.Sessions{}, helpers.PostgresErrorTransform(fmt.Errorf("postgresSessionsRepository - FindAllInDateRange - squirrel: %w", err))
+	}
+
+	var sessions []records.Sessions
+	if err := r.db.Select(&sessions, query, args...); err != nil {
+		return []records.Sessions{}, helpers.PostgresErrorTransform(fmt.Errorf("postgresSessionsRepository - FindAllInDateRange - db.Select: %w", err))
+	}
+
+	return sessions, nil
 }

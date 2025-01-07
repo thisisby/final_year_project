@@ -36,5 +36,5 @@ func getPostgresDSN(
 	password,
 	dbname string,
 ) string {
-	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
+	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable Timezone=Asia/Bishkek", host, port, user, password, dbname)
 }

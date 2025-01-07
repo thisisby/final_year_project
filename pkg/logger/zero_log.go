@@ -15,4 +15,8 @@ func InitZeroLogger() {
 		Timestamp().
 		Caller().
 		Logger()
+
+	zerolog.TimestampFunc = func() time.Time {
+		return time.Now().In(time.Local)
+	}
 }

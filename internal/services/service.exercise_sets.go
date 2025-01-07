@@ -8,6 +8,7 @@ import (
 	"errors"
 	"github.com/jinzhu/copier"
 	"net/http"
+	"time"
 )
 
 type ExerciseSetsRepository interface {
@@ -16,6 +17,12 @@ type ExerciseSetsRepository interface {
 	FindByID(id int) (records.ExerciseSets, error)
 	Update(id int, exerciseSetMap map[string]interface{}) error
 	Delete(id int) error
+	FindAllByCreatedAt(ownerID int, createdAt time.Time) ([]records.ExerciseSets, error)
+	FindAllInDateRange(ownerID int, startDate time.Time, endDate time.Time) ([]records.ExerciseSets, error)
+	FindTotalSetsByDate(ownerID int, date time.Time) (int, error)
+	FindTotalRepsByDate(ownerID int, date time.Time) (int, error)
+	FindUniqueWorkoutExercisesByDate(ownerID int, date time.Time) (int, error)
+	FindExercisesDetailsByDate(ownerID int, date time.Time) ([]records.ExerciseDetails, error)
 }
 
 type ExerciseSetsService struct {

@@ -5,6 +5,7 @@ import (
 	"backend/internal/helpers"
 	"backend/internal/http/data_transfers"
 	"backend/internal/services"
+	"backend/internal/utils"
 	"backend/pkg/convert"
 	"backend/pkg/jwt"
 	"github.com/labstack/echo/v4"
@@ -192,4 +193,23 @@ func (h *WorkoutsHandler) PurchaseWorkout(ctx echo.Context) error {
 	}
 
 	return NewSuccessResponse(ctx, statusCode, "workout purchased successfully", map[string]int{"id": id})
+}
+
+func (h *WorkoutsHandler) FindAllWithFilters(ctx echo.Context) error {
+	var workouts []data_transfers.WorkoutsResponse
+
+	params, err := utils.ExtractQueryParams(ctx.QueryParams())
+	if err != nil {
+		return NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
+	}
+
+	workouts, total, statusCode, err := h.service.FindAllWithFilters(params)
+	if err != nil {
+		return NewErrorResponse(ctx, statusCode, err.Error())
+	}
+
+	return NewSuccessResponse(ctx, http.StatusOK, "Workouts fetched successfully", map[string]interface{}{
+		"data":  workouts,
+		"total": total,
+	})
 }

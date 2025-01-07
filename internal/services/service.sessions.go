@@ -8,6 +8,7 @@ import (
 	"errors"
 	"github.com/jinzhu/copier"
 	"net/http"
+	"time"
 )
 
 type SessionsRepository interface {
@@ -16,6 +17,8 @@ type SessionsRepository interface {
 	Save(session records.Sessions) (int, error)
 	Update(id int, sessionMap map[string]interface{}) error
 	Delete(id int) error
+	FindAllByStartTime(ownerID int, createdAt time.Time) ([]records.Sessions, error)
+	FindAllInDateRange(ownerID int, startDate time.Time, endDate time.Time) ([]records.Sessions, error)
 }
 
 type SessionsService struct {

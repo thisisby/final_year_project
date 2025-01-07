@@ -4,8 +4,9 @@ import (
 	"backend/internal/helpers"
 	"backend/internal/http/data_transfers"
 	"backend/internal/services"
-	"github.com/labstack/echo/v4"
 	"net/http"
+
+	"github.com/labstack/echo/v4"
 )
 
 type AuthHandler struct {

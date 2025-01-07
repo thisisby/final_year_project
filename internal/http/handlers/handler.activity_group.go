@@ -5,8 +5,9 @@ import (
 	"backend/internal/http/data_transfers"
 	"backend/internal/services"
 	"backend/pkg/convert"
-	"github.com/labstack/echo/v4"
 	"net/http"
+
+	"github.com/labstack/echo/v4"
 )
 
 type ActivityGroupsHandler struct {

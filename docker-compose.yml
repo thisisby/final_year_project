@@ -9,6 +9,8 @@ services:
       - .env
     environment:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+      TZ: 'Asia/Bishkek'
+      PGTZ: 'Asia/Bishkek'
     ports:
       - "${db_port}:${db_port}"
     restart: unless-stopped

@@ -31,7 +31,7 @@ func (r *WorkoutsRoute) Register() {
 
 	// workouts routes
 	workouts.POST("", r.workoutHandler.Save)
-	workouts.GET("", r.workoutHandler.FindAll)
+	workouts.GET("", r.workoutHandler.FindAllWithFilters)
 	workouts.GET("/:id", r.workoutHandler.FindByID)
 	workouts.PATCH("/:id", r.workoutHandler.Update)
 	workouts.DELETE("/:id", r.workoutHandler.Delete)

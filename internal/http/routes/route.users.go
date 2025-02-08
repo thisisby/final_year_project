@@ -21,6 +21,7 @@ func NewUsersRoute(container *container.Container, router *echo.Group) *UsersRou
 
 func (r *UsersRoute) Register() {
 	users := r.router.Group("/users")
+	me := r.router.Group("/me")
 
 	users.Use(middlewares.RequireAuth)
 	users.GET("", r.usersHandler.FindAll)
@@ -28,4 +29,7 @@ func (r *UsersRoute) Register() {
 	users.POST("", r.usersHandler.Save)
 	users.PATCH("/:id", r.usersHandler.Update)
 	users.DELETE("/:id", r.usersHandler.Delete)
+
+	me.Use(middlewares.RequireAuth)
+	me.GET("", r.usersHandler.Me)
 }

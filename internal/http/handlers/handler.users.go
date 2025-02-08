@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"backend/internal/constants"
 	"backend/internal/helpers"
 	"backend/internal/http/data_transfers"
 	"backend/internal/services"
 	"backend/pkg/convert"
+	"backend/pkg/jwt"
 	"backend/pkg/logger"
 	"github.com/labstack/echo/v4"
 	"net/http"
@@ -103,4 +105,15 @@ func (h *UsersHandler) Delete(ctx echo.Context) error {
 	}
 
 	return NewSuccessResponse(ctx, http.StatusOK, "user deleted successfully", nil)
+}
+
+func (h *UsersHandler) Me(ctx echo.Context) error {
+	jwtClaims := ctx.Get(constants.CtxAuthenticatedUserKey).(*jwt.Claims)
+
+	user, statusCode, err := h.service.FindByID(jwtClaims.UserID)
+	if err != nil {
+		return NewErrorResponse(ctx, statusCode, err.Error())
+	}
+
+	return NewSuccessResponse(ctx, statusCode, "user fetched successfully", user)
 }

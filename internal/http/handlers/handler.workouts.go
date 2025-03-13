@@ -157,7 +157,7 @@ func (h *WorkoutsHandler) Copy(ctx echo.Context) error {
 		return NewErrorResponse(ctx, statusCode, err.Error())
 	}
 
-	if workout.Price > float64(0) || workout.IsPrivate || workout.OwnerID != jwtClaims.UserID {
+	if workout.Price > float64(0) || workout.IsPrivate {
 		return NewErrorResponse(ctx, http.StatusForbidden, "You cannot copy a paid or private workout")
 	}
 

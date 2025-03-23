@@ -34,6 +34,7 @@ func (r *postgresExercisesRepository) FindAll() ([]records.Exercises, error) {
 		return nil, helpers.PostgresErrorTransform(fmt.Errorf("postgresExercisesRepository - FindAll - db.Select: %w", err))
 	}
 
+	fmt.Println("repository: ", exercises)
 	return exercises, nil
 }
 

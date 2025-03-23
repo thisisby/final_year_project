@@ -21,17 +21,13 @@ func NewSessionsRoute(container *container.Container, router *echo.Group) *Sessi
 
 func (r *SessionsRoute) Register() {
 	sessions := r.router.Group("/sessions")
-	admin := r.router.Group("/admin/sessions")
 
 	sessions.Use(middlewares.RequireAuth)
-	admin.Use(middlewares.RequireAuth)
 
 	// sessions routes
-	sessions.GET("", r.sessionsHandler.FindAll)
+	sessions.GET("", r.sessionsHandler.FindAllByOwnerID)
 	sessions.GET("/:id", r.sessionsHandler.FindByID)
-
-	// admin sessions routes
-	admin.POST("", r.sessionsHandler.Save)
-	admin.PATCH("/:id", r.sessionsHandler.Update)
-	admin.DELETE("/:id", r.sessionsHandler.Delete)
+	sessions.POST("", r.sessionsHandler.Save)
+	sessions.PATCH("/:id", r.sessionsHandler.Update)
+	sessions.DELETE("/:id", r.sessionsHandler.Delete)
 }

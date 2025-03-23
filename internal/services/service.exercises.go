@@ -32,7 +32,6 @@ func NewExercisesService(repository ExercisesRepository) *ExercisesService {
 }
 
 func (s *ExercisesService) FindAll() ([]data_transfers.ExercisesResponse, int, error) {
-	var exercisesResponse []data_transfers.ExercisesResponse
 	exercises, err := s.repository.FindAll()
 	if err != nil {
 		if errors.Is(err, repositories.ErrorRowNotFound) {
@@ -40,7 +39,8 @@ func (s *ExercisesService) FindAll() ([]data_transfers.ExercisesResponse, int, e
 		}
 		return nil, http.StatusInternalServerError, fmt.Errorf("service - FindAll - repository.FindAll: %w", err)
 	}
-
+	fmt.Println(exercises)
+	var exercisesResponse = make([]data_transfers.ExercisesResponse, len(exercises))
 	err = copier.Copy(&exercisesResponse, &exercises)
 	if err != nil {
 		return nil, http.StatusInternalServerError, fmt.Errorf("service - FindAll - copier.Copy: %w", err)

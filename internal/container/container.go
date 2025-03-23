@@ -20,6 +20,7 @@ type Container struct {
 	ActivitiesRepository       services.ActivitiesRepository
 	SessionsRepository         services.SessionsRepository
 	SessionDetailsRepository   services.SessionDetailsRepository
+	NutritionsRepository       services.NutritionsRepository
 
 	// Services
 	UsersService            *services.UsersService
@@ -33,6 +34,7 @@ type Container struct {
 	SessionsService         *services.SessionsService
 	SessionDetailsService   *services.SessionDetailsService
 	AnalyticsService        *services.AnalyticsService
+	NutritionsService       *services.NutritionsService
 
 	// Handlers
 	UsersHandler            *handlers.UsersHandler
@@ -46,6 +48,7 @@ type Container struct {
 	SessionsHandler         *handlers.SessionsHandler
 	SessionDetailsHandler   *handlers.SessionDetailsHandler
 	AnalyticsHandler        *handlers.AnalyticsHandler
+	NutritionsHandler       *handlers.NutritionsHandler
 }
 
 func NewContainer(db *sqlx.DB) *Container {
@@ -60,6 +63,7 @@ func NewContainer(db *sqlx.DB) *Container {
 	activitiesRepository := postgres.NewPostgresActivitiesRepository(db)
 	sessionsRepository := postgres.NewPostgresSessionsRepository(db)
 	sessionDetailsRepository := postgres.NewPostgresSessionDetailsRepository(db)
+	nutritionsRepository := postgres.NewPostgresNutritionsRepository(db)
 
 	// Initialize services
 	usersService := services.NewUsersService(usersRepository)
@@ -74,6 +78,7 @@ func NewContainer(db *sqlx.DB) *Container {
 	sessionsService := services.NewSessionsService(sessionsRepository)
 	sessionDetailsService := services.NewSessionDetailsService(sessionDetailsRepository)
 	analyticsService := services.NewAnalyticsService(exerciseSetsRepository, sessionsRepository)
+	nutritionsService := services.NewNutritionsService(nutritionsRepository)
 
 	// Initialize handlers
 	usersHandler := handlers.NewUsersHandler(usersService)
@@ -87,6 +92,7 @@ func NewContainer(db *sqlx.DB) *Container {
 	sessionsHandler := handlers.NewSessionsHandler(sessionsService)
 	sessionDetailsHandler := handlers.NewSessionDetailsHandler(sessionDetailsService)
 	analyticsHandler := handlers.NewAnalyticsHandler(analyticsService)
+	nutritionsHandler := handlers.NewNutritionsHandler(nutritionsService)
 
 	return &Container{
 		DB: db,
@@ -101,6 +107,7 @@ func NewContainer(db *sqlx.DB) *Container {
 		ActivitiesRepository:       activitiesRepository,
 		SessionsRepository:         sessionsRepository,
 		SessionDetailsRepository:   sessionDetailsRepository,
+		NutritionsRepository:       nutritionsRepository,
 
 		// Services
 		UsersService:            usersService,
@@ -114,6 +121,7 @@ func NewContainer(db *sqlx.DB) *Container {
 		SessionsService:         sessionsService,
 		SessionDetailsService:   sessionDetailsService,
 		AnalyticsService:        analyticsService,
+		NutritionsService:       nutritionsService,
 
 		// Handlers
 		UsersHandler:            usersHandler,
@@ -127,5 +135,6 @@ func NewContainer(db *sqlx.DB) *Container {
 		SessionsHandler:         sessionsHandler,
 		SessionDetailsHandler:   sessionDetailsHandler,
 		AnalyticsHandler:        analyticsHandler,
+		NutritionsHandler:       nutritionsHandler,
 	}
 }

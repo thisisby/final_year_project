@@ -17,6 +17,7 @@ type SessionsRepository interface {
 	Save(session records.Sessions) (int, error)
 	Update(id int, sessionMap map[string]interface{}) error
 	Delete(id int) error
+	FindAllByOwnerID(ownerID int) ([]records.Sessions, error)
 	FindAllByStartTime(ownerID int, createdAt time.Time) ([]records.Sessions, error)
 	FindAllInDateRange(ownerID int, startDate time.Time, endDate time.Time) ([]records.Sessions, error)
 }
@@ -33,6 +34,22 @@ func (s *SessionsService) FindAll() ([]data_transfers.SessionResponse, int, erro
 	var sessionResponses []data_transfers.SessionResponse
 
 	sessions, err := s.repository.FindAll()
+	if err != nil {
+		return sessionResponses, http.StatusInternalServerError, err
+	}
+
+	err = copier.Copy(&sessionResponses, &sessions)
+	if err != nil {
+		return sessionResponses, http.StatusInternalServerError, err
+	}
+
+	return sessionResponses, http.StatusOK, nil
+}
+
+func (s *SessionsService) FindAllByOwnerID(ownerID int) ([]data_transfers.SessionResponse, int, error) {
+	var sessionResponses []data_transfers.SessionResponse
+
+	sessions, err := s.repository.FindAllByOwnerID(ownerID)
 	if err != nil {
 		return sessionResponses, http.StatusInternalServerError, err
 	}

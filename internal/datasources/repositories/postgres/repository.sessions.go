@@ -190,3 +190,31 @@ func (r *postgresSessionsRepository) FindAllInDateRange(ownerID int, startDate t
 
 	return sessions, nil
 }
+
+func (r *postgresSessionsRepository) FindAllByOwnerID(ownerID int) ([]records.Sessions, error) {
+	query, args, err := squirrel.
+		Select(`
+			sessions.*,
+			activities.id AS "activity.id",
+			activities.created_at AS "activity.created_at",
+			activities.updated_at AS "activity.updated_at",
+			activities.deleted_at AS "activity.deleted_at",
+			activities.name AS "activity.name",
+			activities.activity_group_id AS "activity.activity_group_id"
+		`).
+		From("sessions").
+		LeftJoin("activities ON sessions.activity_id = activities.id").
+		Where("sessions.owner_id = ?", ownerID).
+		PlaceholderFormat(squirrel.Dollar).
+		ToSql()
+	if err != nil {
+		return nil, helpers.PostgresErrorTransform(fmt.Errorf("postgresSessionsRepository - FindAllByOwnerID - squirrel: %w", err))
+	}
+
+	var sessions []records.Sessions
+	if err := r.db.Select(&sessions, query, args...); err != nil {
+		return nil, helpers.PostgresErrorTransform(fmt.Errorf("postgresSessionsRepository - FindAllByOwnerID - db.Select: %w", err))
+	}
+
+	return sessions, nil
+}

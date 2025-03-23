@@ -1,1 +1,0 @@
-ALTER TABLE exercises DROP CONSTRAINT IF EXISTS exercises_name_key;

@@ -43,6 +43,18 @@ func (h *SessionsHandler) FindByID(ctx echo.Context) error {
 	return NewSuccessResponse(ctx, statusCode, "session fetched successfully", sessionResponse)
 }
 
+func (h *SessionsHandler) FindAllByOwnerID(ctx echo.Context) error {
+	jwtClaims := ctx.Get(constants.CtxAuthenticatedUserKey).(*jwt.Claims)
+	ownerID := jwtClaims.UserID
+
+	sessionResponses, statusCode, err := h.service.FindAllByOwnerID(ownerID)
+	if err != nil {
+		return NewErrorResponse(ctx, statusCode, err.Error())
+	}
+
+	return NewSuccessResponse(ctx, statusCode, "sessions fetched successfully", sessionResponses)
+}
+
 func (h *SessionsHandler) Save(ctx echo.Context) error {
 	var createSessionRequest data_transfers.CreateSessionRequest
 	jwtClaims := ctx.Get(constants.CtxAuthenticatedUserKey).(*jwt.Claims)

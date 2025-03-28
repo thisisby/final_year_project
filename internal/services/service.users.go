@@ -6,13 +6,13 @@ import (
 	"backend/internal/helpers"
 	"backend/internal/http/data_transfers"
 	"backend/pkg/convert"
+	"crypto/md5"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"github.com/jinzhu/copier"
 	"net/http"
 	"strings"
-
-	"github.com/Pallinder/go-randomdata"
 )
 
 type UsersRepository interface {
@@ -125,10 +125,7 @@ func (s *UsersService) Save(userRequest data_transfers.CreateUsersRequest) (int,
 		return http.StatusInternalServerError, fmt.Errorf("service - Save - copier.Copy: %w", err)
 	}
 
-	userRecord.Username, err = s.generateRealishUniqueUsername()
-	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("service - Save - generateRealishUniqueUsername: %w", err)
-	}
+	userRecord.Username = generateUsernameFromEmail(userRecord.Email)
 
 	userRecord.Password, err = helpers.GenerateHash(userRecord.Password)
 	if err != nil {
@@ -186,21 +183,48 @@ func (s *UsersService) ChangeAvatar(id int, avatar string) (int, error) {
 	return http.StatusOK, nil
 }
 
-func (s *UsersService) generateRealishUniqueUsername() (string, error) {
-	for i := 0; i < 10; i++ { // Attempt 10 times to generate a unique username
-		firstName := strings.ToLower(randomdata.FirstName(randomdata.RandomGender))
-		lastName := strings.ToLower(randomdata.LastName())
-		randomNumber := randomdata.Number(1000) // Add a random number to increase uniqueness
+func generateUsernameFromEmail(email string) string {
+	// 1. Normalize the email by lowercasing and trimming spaces.
+	normalizedEmail := strings.TrimSpace(strings.ToLower(email))
 
-		username := fmt.Sprintf("%s%s%d", firstName, lastName, randomNumber)
-
-		// Check if the generated username already exists.
-		if exists, err := s.repository.UsernameExists(username); err != nil {
-			return "", fmt.Errorf("failed to check username existence: %w", err)
-		} else if !exists {
-			return username, nil
-		}
+	// 2. Extract the part before the '@' symbol.
+	atIndex := strings.Index(normalizedEmail, "@")
+	if atIndex == -1 {
+		// If '@' is not found, use the entire email.
+		return generateFallbackUsername(normalizedEmail)
 	}
 
-	return "", errors.New("failed to generate a unique username after multiple attempts") //Handle the case that after 10 tries, a unique username wasn't found.
+	localPart := normalizedEmail[:atIndex]
+
+	// 3. Clean up the local part by removing non-alphanumeric characters.
+	var cleanedUsername strings.Builder
+	for _, char := range localPart {
+		if ('a' <= char && char <= 'z') || ('0' <= char && char <= '9') {
+			cleanedUsername.WriteRune(char)
+		}
+	}
+	username := cleanedUsername.String()
+
+	// 4. Handle empty username after cleaning.
+	if username == "" {
+		return generateFallbackUsername(normalizedEmail)
+	}
+
+	// 5. Shorten if necessary and add a hash suffix to increase uniqueness.
+	if len(username) > 20 {
+		username = username[:20]
+	}
+
+	hash := md5.Sum([]byte(normalizedEmail))
+	hashString := hex.EncodeToString(hash[:])
+	suffix := hashString[:6] // Use a short hash to avoid extremely long usernames.
+
+	return fmt.Sprintf("%s%s", username, suffix)
+}
+
+func generateFallbackUsername(input string) string {
+	// Generate a fallback username using a hash of the input.
+	hash := md5.Sum([]byte(input))
+	hashString := hex.EncodeToString(hash[:])
+	return "user" + hashString[:10]
 }

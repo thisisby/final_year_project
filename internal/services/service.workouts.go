@@ -91,6 +91,33 @@ func (s *WorkoutsService) FindByID(id int) (data_transfers.WorkoutsResponse, int
 	return workoutResponse, http.StatusOK, nil
 }
 
+func (s *WorkoutsService) FindByIDByOwner(id int, userID int) (data_transfers.WorkoutsResponse, int, error) {
+	var workoutResponse data_transfers.WorkoutsResponse
+
+	workout, err := s.repository.FindByID(id)
+	if err != nil {
+		if errors.Is(err, repositories.ErrorRowNotFound) {
+			return workoutResponse, http.StatusNotFound, errors.New("workout not found")
+		}
+		return workoutResponse, http.StatusInternalServerError, err
+	}
+
+	err = copier.Copy(&workoutResponse, &workout)
+	if err != nil {
+		return workoutResponse, http.StatusInternalServerError, err
+	}
+
+	if workout.Price == float64(0) || workout.OwnerID == userID {
+		workoutExercises, statusCode, err := s.workoutExercisesService.FindAllByWorkoutID(workout.ID)
+		if err != nil {
+			return workoutResponse, statusCode, err
+		}
+		workoutResponse.Exercises = workoutExercises
+	}
+
+	return workoutResponse, http.StatusOK, nil
+}
+
 func (s *WorkoutsService) FindAllByOwnerID(ownerID int) ([]data_transfers.WorkoutsResponse, int, error) {
 	var workoutsResponse []data_transfers.WorkoutsResponse
 
@@ -102,7 +129,14 @@ func (s *WorkoutsService) FindAllByOwnerID(ownerID int) ([]data_transfers.Workou
 		return nil, http.StatusInternalServerError, err
 	}
 
-	err = copier.Copy(&workoutsResponse, &workouts)
+	var publicWorkouts []records.Workouts
+	for _, workout := range workouts {
+		if workout.IsPrivate == false {
+			publicWorkouts = append(publicWorkouts, workout)
+		}
+	}
+
+	err = copier.Copy(&workoutsResponse, &publicWorkouts)
 	if err != nil {
 		return nil, http.StatusInternalServerError, err
 	}
@@ -216,19 +250,25 @@ func (s *WorkoutsService) FindAllWithFilters(params repositories.QueryParams) ([
 		return nil, 0, http.StatusInternalServerError, err
 	}
 
-	err = copier.Copy(&workoutsResponse, &workouts)
+	var freeWorkouts []records.Workouts
+	for _, workout := range workouts {
+		if workout.Price == float64(0) {
+			freeWorkouts = append(freeWorkouts, workout)
+		}
+	}
+
+	err = copier.Copy(&workoutsResponse, &freeWorkouts)
 	if err != nil {
 		return nil, 0, http.StatusInternalServerError, err
 	}
 
 	for i, workout := range workoutsResponse {
-		if workout.Price == float64(0) {
-			workoutExercises, statusCode, err := s.workoutExercisesService.FindAllByWorkoutID(workout.ID)
-			if err != nil {
-				return nil, 0, statusCode, err
-			}
-			workoutsResponse[i].Exercises = workoutExercises
+		workoutExercises, statusCode, err := s.workoutExercisesService.FindAllByWorkoutID(workout.ID)
+		if err != nil {
+			return nil, 0, statusCode, err
 		}
+		workoutsResponse[i].Exercises = workoutExercises
+
 	}
 
 	return workoutsResponse, total, http.StatusOK, nil

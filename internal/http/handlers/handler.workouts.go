@@ -35,6 +35,7 @@ func (h *WorkoutsHandler) FindAll(ctx echo.Context) error {
 
 func (h *WorkoutsHandler) FindByID(ctx echo.Context) error {
 	var workout data_transfers.WorkoutsResponse
+	jwtClaims := ctx.Get(constants.CtxAuthenticatedUserKey).(*jwt.Claims)
 
 	workoutIDStr := ctx.Param("id")
 	workoutID, err := convert.StringToInt(workoutIDStr)
@@ -42,7 +43,7 @@ func (h *WorkoutsHandler) FindByID(ctx echo.Context) error {
 		return NewErrorResponse(ctx, http.StatusBadRequest, "Invalid workout ID")
 	}
 
-	workout, statusCode, err := h.service.FindByID(workoutID)
+	workout, statusCode, err := h.service.FindByIDByOwner(workoutID, jwtClaims.UserID)
 	if err != nil {
 		return NewErrorResponse(ctx, statusCode, err.Error())
 	}

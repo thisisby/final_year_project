@@ -8,10 +8,14 @@ type CreateUsersRequest struct {
 type UsersResponse struct {
 	ID       int    `json:"id"`
 	Email    string `json:"email"`
+	Username string `json:"username"`
+	Bio      string `json:"bio"`
+	Avatar   string `json:"avatar"`
 	Password string `json:"-"`
 }
 
 type UpdateUsersRequest struct {
 	Email    *string `json:"email" validate:"omitempty,email"`
-	Password *string `json:"password" validate:"omitempty,min=8"`
+	Username *string `json:"username" validate:"omitempty"`
+	Bio      *string `json:"bio" validate:"omitempty"`
 }

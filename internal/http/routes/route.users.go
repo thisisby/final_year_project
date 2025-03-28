@@ -22,8 +22,11 @@ func NewUsersRoute(container *container.Container, router *echo.Group) *UsersRou
 func (r *UsersRoute) Register() {
 	users := r.router.Group("/users")
 	me := r.router.Group("/me")
+	usersSearch := r.router.Group("/users-search")
 
+	usersSearch.Use(middlewares.RequireAuth)
 	users.Use(middlewares.RequireAuth)
+
 	users.GET("", r.usersHandler.FindAll)
 	users.GET("/:id", r.usersHandler.FindByID)
 	users.POST("", r.usersHandler.Save)
@@ -32,4 +35,8 @@ func (r *UsersRoute) Register() {
 
 	me.Use(middlewares.RequireAuth)
 	me.GET("", r.usersHandler.Me)
+
+	usersSearch.GET("", r.usersHandler.FindByUsername)
+
+	me.POST("/change-avatar", r.usersHandler.ChangeAvatar)
 }

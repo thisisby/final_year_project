@@ -30,6 +30,11 @@ type config struct {
 	JwtIssuer                string `yaml:"jwt_issuer"`
 	JwtAccessTokenExpiresIn  int    `yaml:"jwt_access_token_expires_in"`
 	JwtRefreshTokenExpiresIn int    `yaml:"jwt_refresh_token_expires_in"`
+
+	AWSAccessKeyID     string `yaml:"aws_access_key_id"`
+	AWSAccessKeySecret string `yaml:"aws_secret_access_key"`
+	AWSRegion          string `yaml:"aws_region"`
+	AWSBucketName      string `yaml:"aws_bucket_name"`
 }
 
 var Config config

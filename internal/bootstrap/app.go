@@ -10,6 +10,7 @@ import (
 	"backend/pkg/httpserver"
 	"backend/pkg/jwt"
 	"backend/pkg/logger"
+	"backend/third_party/s3"
 	"fmt"
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v4"
@@ -30,6 +31,11 @@ func MustRun() {
 	defer conn.Close()
 
 	logger.ZeroLogger.Info().Msg("Default postgres connection established.")
+
+	s3Client, err := s3.NewClient(config.Config.AWSRegion, config.Config.AWSAccessKeyID, config.Config.AWSAccessKeySecret)
+	if err != nil {
+		logger.ZeroLogger.Fatal().Msgf("bootstrap - MustRun - s3.NewClient: %v", err)
+	}
 
 	e := echo.New()
 	e.Use(middleware.CORSWithConfig(middleware.DefaultCORSConfig))
@@ -54,7 +60,7 @@ func MustRun() {
 
 	v1 := e.Group("/api/v1")
 
-	setupRoutes(v1, conn)
+	setupRoutes(v1, conn, s3Client)
 
 	// running server
 	logger.ZeroLogger.Info().Msg("Starting http server...")
@@ -79,8 +85,8 @@ func MustRun() {
 	}
 }
 
-func setupRoutes(e *echo.Group, conn *sqlx.DB) {
-	cont := container.NewContainer(conn)
+func setupRoutes(e *echo.Group, conn *sqlx.DB, s3Client *s3.Client) {
+	cont := container.NewContainer(conn, s3Client)
 
 	// Register routes
 	routes.NewUsersRoute(cont, e).Register()

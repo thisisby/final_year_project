@@ -26,3 +26,9 @@ jwt_secret_key: secret
 jwt_issuer: bai
 jwt_access_token_expires_in: 5
 jwt_refresh_token_expires_in: 10
+
+# aws
+aws_access_key_id: ~
+aws_secret_access_key: ~
+aws_region: ~
+aws_bucket_name: ~

@@ -5,6 +5,8 @@ import (
 	"backend/internal/datasources/repositories"
 	"backend/internal/helpers"
 	"backend/internal/services"
+	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
@@ -39,12 +41,18 @@ func (r *postgresWorkoutsRepository) FindAll() ([]records.Workouts, error) {
 }
 
 func (r *postgresWorkoutsRepository) FindByID(id int) (records.Workouts, error) {
+	// Query with likes count
 	query, args, err := squirrel.
-		Select("*").
+		Select("workouts.*", "COUNT(workout_likes.id) AS likes_count").
 		From("workouts").
-		Where(squirrel.Eq{"id": id}, squirrel.Eq{"is_private": false}).
+		LeftJoin("workout_likes ON workouts.id = workout_likes.workout_id").
+		Where(squirrel.And{
+			squirrel.Eq{"workouts.id": id},
+		}).
+		GroupBy("workouts.id").
 		PlaceholderFormat(squirrel.Dollar).
 		ToSql()
+
 	if err != nil {
 		return records.Workouts{}, helpers.PostgresErrorTransform(fmt.Errorf("postgresWorkoutsRepository - FindByID - squirrel.Select: %w", err))
 	}
@@ -226,7 +234,7 @@ func (r *postgresWorkoutsRepository) Copy(id int, userID int) (int, error) {
 		queryInsert, args, err := squirrel.
 			Insert("workout_exercises").
 			Columns("workout_id", "exercise_id", "main_note", "secondary_note", "owner_id").
-			Values(workoutExercise.WorkoutID, workoutExercise.ExerciseID, workoutExercise.MainNote, workoutExercise.SecondaryNote, workoutExercise.OwnerID).
+			Values(workoutExercise.WorkoutID, workoutExercise.ExerciseID, workoutExercise.MainNote, workoutExercise.SecondaryNote, userID).
 			PlaceholderFormat(squirrel.Dollar).
 			ToSql()
 		if err != nil {
@@ -246,26 +254,32 @@ func (r *postgresWorkoutsRepository) Copy(id int, userID int) (int, error) {
 }
 
 func (r *postgresWorkoutsRepository) FindAllWithFilters(params repositories.QueryParams) ([]records.Workouts, int, error) {
+	// For selecting workouts with like count
 	querySelectWorkouts := squirrel.
-		Select("*").
+		Select("workouts.*", "COUNT(workout_likes.id) AS likes_count").
 		From("workouts").
+		LeftJoin("workout_likes ON workouts.id = workout_likes.workout_id AND workout_likes.deleted_at IS NULL").
+		GroupBy("workouts.id").
 		PlaceholderFormat(squirrel.Dollar)
 
+	// For counting total workouts
 	queryCountWorkouts := squirrel.
-		Select("COUNT(*)").
+		Select("COUNT(DISTINCT workouts.id)").
 		From("workouts").
+		LeftJoin("workout_likes ON workouts.id = workout_likes.workout_id AND workout_likes.deleted_at IS NULL").
 		PlaceholderFormat(squirrel.Dollar)
 
+	// Apply filters to both queries
 	querySelectWorkouts = repositories.ApplyFilters(querySelectWorkouts, params.Filters)
 	queryCountWorkouts = repositories.ApplyFilters(queryCountWorkouts, params.Filters)
 
+	// Apply privacy filter
 	querySelectWorkouts = querySelectWorkouts.
-		Where(squirrel.Eq{"is_private": false}).
-		OrderBy("id ASC")
-
+		Where(squirrel.Eq{"workouts.is_private": false})
 	queryCountWorkouts = queryCountWorkouts.
-		Where(squirrel.Eq{"is_private": false})
+		Where(squirrel.Eq{"workouts.is_private": false})
 
+	// Get total count
 	var total int
 	query, args, err := queryCountWorkouts.ToSql()
 	if err != nil {
@@ -276,6 +290,10 @@ func (r *postgresWorkoutsRepository) FindAllWithFilters(params repositories.Quer
 		return nil, 0, helpers.PostgresErrorTransform(fmt.Errorf("postgresWorkoutsRepository - FindAllWithFilters - r.db.Get: %w", err))
 	}
 
+	// Order by likes count (descending)
+	querySelectWorkouts = querySelectWorkouts.OrderBy("likes_count DESC")
+
+	// Apply pagination if needed
 	if params.Pagination.Limit > 0 {
 		querySelectWorkouts = repositories.ApplyPagination(querySelectWorkouts, params.Pagination.Page, params.Pagination.Limit)
 	}
@@ -291,4 +309,48 @@ func (r *postgresWorkoutsRepository) FindAllWithFilters(params repositories.Quer
 	}
 
 	return workouts, total, nil
+}
+
+func (r *postgresWorkoutsRepository) LikeWorkout(id int, userID int) error {
+	existingQuery, existingArgs, err := squirrel.
+		Select("id").
+		From("workout_likes").
+		Where(squirrel.And{
+			squirrel.Eq{"workout_id": id},
+			squirrel.Eq{"user_id": userID},
+			squirrel.Eq{"deleted_at": nil},
+		}).
+		PlaceholderFormat(squirrel.Dollar).
+		ToSql()
+
+	if err != nil {
+		return helpers.PostgresErrorTransform(fmt.Errorf("postgresWorkoutsRepository - LikeWorkout - check existing - squirrel.Select: %w", err))
+	}
+
+	var existingID int
+	err = r.db.Get(&existingID, existingQuery, existingArgs...)
+
+	if err == nil {
+		return helpers.PostgresErrorTransform(fmt.Errorf("user has already liked this workout"))
+	}
+
+	if !errors.Is(err, sql.ErrNoRows) {
+		return helpers.PostgresErrorTransform(fmt.Errorf("postgresWorkoutsRepository - LikeWorkout - check existing - r.db.Get: %w", err))
+	}
+
+	query, args, err := squirrel.
+		Insert("workout_likes").
+		Columns("workout_id", "user_id").
+		Values(id, userID).
+		PlaceholderFormat(squirrel.Dollar).
+		ToSql()
+	if err != nil {
+		return helpers.PostgresErrorTransform(fmt.Errorf("postgresWorkoutsRepository - LikeWorkout - squirrel.Insert: %w", err))
+	}
+
+	if _, err := r.db.Exec(query, args...); err != nil {
+		return helpers.PostgresErrorTransform(fmt.Errorf("postgresWorkoutsRepository - LikeWorkout - db.Exec: %w", err))
+	}
+
+	return nil
 }

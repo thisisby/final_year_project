@@ -7,5 +7,6 @@ type Workouts struct {
 	IsPrivate   bool    `db:"is_private"`
 	Price       float64 `db:"price"`
 	OwnerID     int     `db:"owner_id"`
+	LikesCount  int     `db:"likes_count"`
 	Exercises   []WorkoutExercises
 }

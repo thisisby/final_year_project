@@ -22,5 +22,16 @@ type WorkoutsResponse struct {
 	IsPrivate   bool                       `json:"is_private"`
 	Price       float64                    `json:"price"`
 	OwnerID     int                        `json:"owner_id"`
+	LikesCount  int                        `json:"likes_count"`
 	Exercises   []WorkoutExercisesResponse `json:"exercises"`
+}
+
+type WorkoutGenerateRequest struct {
+	Level     string   `json:"level" validate:"required"`
+	Goal      string   `json:"goal" validate:"required"`
+	BodyAreas []string `json:"body_areas" validate:"required"`
+	Gender    string   `json:"gender" validate:"required"`
+	Age       string   `json:"age" validate:"required"`
+	Details   string   `json:"details" validate:"omitempty"`
+	OwnerID   int      `json:"-"`
 }

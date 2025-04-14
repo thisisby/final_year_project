@@ -5,6 +5,7 @@ import (
 	"backend/internal/datasources/repositories"
 	"backend/internal/http/data_transfers"
 	"backend/pkg/convert"
+	"backend/third_party/io"
 	"errors"
 	"fmt"
 	"github.com/jinzhu/copier"
@@ -21,17 +22,22 @@ type WorkoutsRepository interface {
 	Delete(id int) error
 	Copy(id int, userID int) (int, error)
 	FindAllWithFilters(params repositories.QueryParams) ([]records.Workouts, int, error)
+	LikeWorkout(id int, userID int) error
 }
 
 type WorkoutsService struct {
 	repository              WorkoutsRepository
 	workoutExercisesService *WorkoutExercisesService
+	exercisesService        *ExercisesService
+	ionet                   *io.Client
 }
 
-func NewWorkoutsService(repository WorkoutsRepository, workoutExercisesService *WorkoutExercisesService) *WorkoutsService {
+func NewWorkoutsService(repository WorkoutsRepository, workoutExercisesService *WorkoutExercisesService, ionet *io.Client, exercisesService *ExercisesService) *WorkoutsService {
 	return &WorkoutsService{
 		repository:              repository,
 		workoutExercisesService: workoutExercisesService,
+		ionet:                   ionet,
+		exercisesService:        exercisesService,
 	}
 }
 
@@ -272,4 +278,80 @@ func (s *WorkoutsService) FindAllWithFilters(params repositories.QueryParams) ([
 	}
 
 	return workoutsResponse, total, http.StatusOK, nil
+}
+
+func (s *WorkoutsService) LikeWorkout(id int, userID int) (int, error) {
+	err := s.repository.LikeWorkout(id, userID)
+	if err != nil {
+		if errors.Is(err, repositories.ErrorRowNotFound) {
+			return http.StatusNotFound, errors.New("workout not found")
+		}
+		return http.StatusInternalServerError, err
+	}
+
+	return http.StatusOK, nil
+}
+
+func (s *WorkoutsService) GenerateWorkout(generateRequest data_transfers.WorkoutGenerateRequest) (int, error) {
+
+	response, err := s.ionet.GenerateWorkout(generateRequest)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("service - GenerateWorkout - ionet.GenerateWorkout: %w", err)
+	}
+	workout := data_transfers.CreateWorkoutRequest{
+		Title:       response.WorkoutName,
+		Description: response.Description,
+		IsPrivate:   false,
+		Price:       0,
+		OwnerID:     generateRequest.OwnerID,
+	}
+	workoutID, statusCode, err := s.Save(workout)
+	if err != nil {
+		return statusCode, fmt.Errorf("service - GenerateWorkout - Save: %w", err)
+	}
+
+	fmt.Println(response.Exercises)
+	for _, exercise := range response.Exercises {
+		exercise2, statusCode, err := s.exercisesService.FindByName(exercise.Name)
+		if err != nil || exercise2.ID == 0 {
+			fmt.Println("Exercise not found, creating new one", exercise.Name)
+			customExercise := data_transfers.CreateExercisesRequest{
+				Name: exercise.Name,
+			}
+			exerciseID, statusCode, err := s.exercisesService.CreateCustomExercise(customExercise, generateRequest.OwnerID)
+			if err != nil {
+				return statusCode, fmt.Errorf("service - GenerateWorkout - CreateCustomExercise: %w", err)
+			}
+			workoutExercise := data_transfers.CreateWorkoutExercisesRequest{
+				WorkoutID:  workoutID,
+				ExerciseID: exerciseID,
+				MainNote:   exercise.Description,
+				OwnerID:    generateRequest.OwnerID,
+			}
+
+			_, statusCode, err = s.workoutExercisesService.Save(workoutExercise)
+			if err != nil {
+				return statusCode, fmt.Errorf("service - GenerateWorkout - Save: %w", err)
+
+			}
+
+			fmt.Println("Exercise created", customExercise.Name)
+		} else {
+			fmt.Println("Exercise found", exercise.Name)
+			workoutExercise := data_transfers.CreateWorkoutExercisesRequest{
+				WorkoutID:  workoutID,
+				ExerciseID: exercise2.ID,
+				MainNote:   exercise.Description,
+				OwnerID:    generateRequest.OwnerID,
+			}
+			_, statusCode, err = s.workoutExercisesService.Save(workoutExercise)
+			if err != nil {
+				return statusCode, fmt.Errorf("service - GenerateWorkout - Save: %w", err)
+			}
+			fmt.Println("Exercise added to workout")
+		}
+
+	}
+
+	return http.StatusCreated, nil
 }

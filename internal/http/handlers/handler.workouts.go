@@ -214,3 +214,35 @@ func (h *WorkoutsHandler) FindAllWithFilters(ctx echo.Context) error {
 		"total": total,
 	})
 }
+
+func (h *WorkoutsHandler) LikeWorkout(ctx echo.Context) error {
+	jwtClaims := ctx.Get(constants.CtxAuthenticatedUserKey).(*jwt.Claims)
+
+	workoutIDStr := ctx.Param("id")
+	workoutID, err := convert.StringToInt(workoutIDStr)
+	if err != nil {
+		return NewErrorResponse(ctx, http.StatusBadRequest, "Invalid workout ID")
+	}
+
+	statusCode, err := h.service.LikeWorkout(workoutID, jwtClaims.UserID)
+	if err != nil {
+		return NewErrorResponse(ctx, statusCode, err.Error())
+	}
+
+	return NewSuccessResponse(ctx, statusCode, "Workout liked successfully", nil)
+}
+
+func (h *WorkoutsHandler) GenerateWorkout(ctx echo.Context) error {
+	jwtClaims := ctx.Get(constants.CtxAuthenticatedUserKey).(*jwt.Claims)
+	var generateWorkoutRequest data_transfers.WorkoutGenerateRequest
+
+	err := helpers.BindAndValidate(ctx, &generateWorkoutRequest)
+	if err != nil {
+		return NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
+	}
+
+	generateWorkoutRequest.OwnerID = jwtClaims.UserID
+	go h.service.GenerateWorkout(generateWorkoutRequest)
+
+	return NewSuccessResponse(ctx, 201, "Workout generated successfully", nil)
+}

@@ -10,6 +10,7 @@ import (
 	"backend/pkg/httpserver"
 	"backend/pkg/jwt"
 	"backend/pkg/logger"
+	"backend/third_party/io"
 	"backend/third_party/s3"
 	"fmt"
 	"github.com/jmoiron/sqlx"
@@ -37,6 +38,8 @@ func MustRun() {
 		logger.ZeroLogger.Fatal().Msgf("bootstrap - MustRun - s3.NewClient: %v", err)
 	}
 
+	ionet := io.NewClient(config.Config.IOAPIKey)
+
 	e := echo.New()
 	e.Use(middleware.CORSWithConfig(middleware.DefaultCORSConfig))
 	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
@@ -60,7 +63,7 @@ func MustRun() {
 
 	v1 := e.Group("/api/v1")
 
-	setupRoutes(v1, conn, s3Client)
+	setupRoutes(v1, conn, s3Client, ionet)
 
 	// running server
 	logger.ZeroLogger.Info().Msg("Starting http server...")
@@ -85,8 +88,8 @@ func MustRun() {
 	}
 }
 
-func setupRoutes(e *echo.Group, conn *sqlx.DB, s3Client *s3.Client) {
-	cont := container.NewContainer(conn, s3Client)
+func setupRoutes(e *echo.Group, conn *sqlx.DB, s3Client *s3.Client, ionet *io.Client) {
+	cont := container.NewContainer(conn, s3Client, ionet)
 
 	// Register routes
 	routes.NewUsersRoute(cont, e).Register()

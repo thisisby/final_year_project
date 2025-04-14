@@ -35,6 +35,8 @@ type config struct {
 	AWSAccessKeySecret string `yaml:"aws_secret_access_key"`
 	AWSRegion          string `yaml:"aws_region"`
 	AWSBucketName      string `yaml:"aws_bucket_name"`
+
+	IOAPIKey string `yaml:"io_api_key"`
 }
 
 var Config config

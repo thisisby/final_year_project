@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS workout_likes CASCADE;

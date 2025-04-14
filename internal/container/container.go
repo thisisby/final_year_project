@@ -4,6 +4,7 @@ import (
 	"backend/internal/datasources/repositories/postgres"
 	"backend/internal/http/handlers"
 	"backend/internal/services"
+	"backend/third_party/io"
 	"backend/third_party/s3"
 	"github.com/jmoiron/sqlx"
 )
@@ -52,7 +53,7 @@ type Container struct {
 	NutritionsHandler       *handlers.NutritionsHandler
 }
 
-func NewContainer(db *sqlx.DB, s3Client *s3.Client) *Container {
+func NewContainer(db *sqlx.DB, s3Client *s3.Client, ionet *io.Client) *Container {
 	// Initialize repositories
 	usersRepository := postgres.NewPostgresUsersRepository(db)
 	tokenRepository := postgres.NewPostgresTokensRepository(db)
@@ -72,7 +73,7 @@ func NewContainer(db *sqlx.DB, s3Client *s3.Client) *Container {
 	authService := services.NewAuthService(usersService, tokenService)
 	exercisesService := services.NewExercisesService(exercisesRepository)
 	workoutExercisesService := services.NewWorkoutExercisesService(workoutExercisesRepository)
-	workoutsService := services.NewWorkoutsService(workoutsRepository, workoutExercisesService)
+	workoutsService := services.NewWorkoutsService(workoutsRepository, workoutExercisesService, ionet, exercisesService)
 	exerciseSetsService := services.NewExerciseSetsService(exerciseSetsRepository)
 	activityGroupsService := services.NewActivityGroupsService(activityGroupsRepository)
 	activitiesService := services.NewActivitiesService(activitiesRepository)

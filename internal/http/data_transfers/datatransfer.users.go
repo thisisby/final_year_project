@@ -12,10 +12,12 @@ type UsersResponse struct {
 	Bio      string `json:"bio"`
 	Avatar   string `json:"avatar"`
 	Password string `json:"-"`
+	CardPAN  string `json:"card_pan"`
 }
 
 type UpdateUsersRequest struct {
 	Email    *string `json:"email" validate:"omitempty,email"`
 	Username *string `json:"username" validate:"omitempty"`
 	Bio      *string `json:"bio" validate:"omitempty"`
+	CardPAN  *string `json:"card_pan" validate:"omitempty"`
 }

@@ -7,4 +7,5 @@ type Users struct {
 	Username string `db:"username"`
 	Bio      string `db:"bio"`
 	Avatar   string `db:"avatar"`
+	CardPAN  string `db:"card_pan"`
 }

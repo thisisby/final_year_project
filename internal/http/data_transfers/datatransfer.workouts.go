@@ -35,3 +35,11 @@ type WorkoutGenerateRequest struct {
 	Details   string   `json:"details" validate:"omitempty"`
 	OwnerID   int      `json:"-"`
 }
+
+type PurchaseWorkoutRequest struct {
+	WorkoutID       int    `json:"workout_id" validate:"required"`
+	CardNumber      string `json:"card_number" validate:"required"`
+	CardCVV         string `json:"card_cvv" validate:"required"`
+	CardExpiryMonth string `json:"card_expiry_month" validate:"required"`
+	CardExpiryYear  string `json:"card_expiry_year" validate:"required"`
+}

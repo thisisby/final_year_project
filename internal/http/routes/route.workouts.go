@@ -39,7 +39,7 @@ func (r *WorkoutsRoute) Register() {
 	workouts.DELETE("/:id", r.workoutHandler.Delete)
 	workouts.POST("/:id/like", r.workoutHandler.LikeWorkout)
 	workouts.GET("/:workoutID/copy", r.workoutHandler.Copy)
-	workouts.GET("/:workoutID/purchase", r.workoutHandler.PurchaseWorkout)
+	workouts.POST("/:workoutID/purchase", r.workoutHandler.PurchaseWorkout)
 
 	workoutsAi.POST("/generate", r.workoutHandler.GenerateWorkout)
 }

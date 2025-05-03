@@ -331,7 +331,25 @@ func (r *postgresWorkoutsRepository) LikeWorkout(id int, userID int) error {
 	err = r.db.Get(&existingID, existingQuery, existingArgs...)
 
 	if err == nil {
-		return helpers.PostgresErrorTransform(fmt.Errorf("user has already liked this workout"))
+		// delete existing like
+		deleteQuery, deleteArgs, err := squirrel.
+			Delete("workout_likes").
+			Where(squirrel.And{
+				squirrel.Eq{"workout_id": id},
+				squirrel.Eq{"user_id": userID},
+				squirrel.Eq{"deleted_at": nil},
+			}).
+			PlaceholderFormat(squirrel.Dollar).
+			ToSql()
+		if err != nil {
+			return helpers.PostgresErrorTransform(fmt.Errorf("postgresWorkoutsRepository - LikeWorkout - delete existing - squirrel.Delete: %w", err))
+		}
+
+		if _, err := r.db.Exec(deleteQuery, deleteArgs...); err != nil {
+			return helpers.PostgresErrorTransform(fmt.Errorf("postgresWorkoutsRepository - LikeWorkout - delete existing - db.Exec: %w", err))
+		}
+
+		return nil
 	}
 
 	if !errors.Is(err, sql.ErrNoRows) {

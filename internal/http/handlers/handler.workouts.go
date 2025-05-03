@@ -8,6 +8,7 @@ import (
 	"backend/internal/utils"
 	"backend/pkg/convert"
 	"backend/pkg/jwt"
+	"fmt"
 	"github.com/labstack/echo/v4"
 	"net/http"
 )
@@ -170,32 +171,6 @@ func (h *WorkoutsHandler) Copy(ctx echo.Context) error {
 	return NewSuccessResponse(ctx, statusCode, "workout copied successfully", map[string]int{"id": id})
 }
 
-func (h *WorkoutsHandler) PurchaseWorkout(ctx echo.Context) error {
-	jwtClaims := ctx.Get(constants.CtxAuthenticatedUserKey).(*jwt.Claims)
-
-	idStr := ctx.Param("workoutID")
-	workoutID, err := convert.StringToInt(idStr)
-	if err != nil {
-		return NewErrorResponse(ctx, http.StatusBadRequest, "Invalid workout ID")
-	}
-
-	workout, statusCode, err := h.service.FindByID(workoutID)
-	if err != nil {
-		return NewErrorResponse(ctx, statusCode, err.Error())
-	}
-
-	if workout.IsPrivate || workout.Price <= float64(0) {
-		return NewErrorResponse(ctx, http.StatusForbidden, "You cannot purchase a free or private workout")
-	}
-
-	id, statusCode, err := h.service.PurchaseWorkout(workoutID, jwtClaims.UserID)
-	if err != nil {
-		return NewErrorResponse(ctx, statusCode, err.Error())
-	}
-
-	return NewSuccessResponse(ctx, statusCode, "workout purchased successfully", map[string]int{"id": id})
-}
-
 func (h *WorkoutsHandler) FindAllWithFilters(ctx echo.Context) error {
 	var workouts []data_transfers.WorkoutsResponse
 
@@ -245,4 +220,30 @@ func (h *WorkoutsHandler) GenerateWorkout(ctx echo.Context) error {
 	go h.service.GenerateWorkout(generateWorkoutRequest)
 
 	return NewSuccessResponse(ctx, 201, "Workout generated successfully", nil)
+}
+
+func (h *WorkoutsHandler) PurchaseWorkout(ctx echo.Context) error {
+	jwtClaims := ctx.Get(constants.CtxAuthenticatedUserKey).(*jwt.Claims)
+
+	var purchaseRequest data_transfers.PurchaseWorkoutRequest
+	err := helpers.BindAndValidate(ctx, &purchaseRequest)
+	if err != nil {
+		return NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
+	}
+
+	fmt.Println("Purchase request:", purchaseRequest)
+
+	_, statusCode, err := h.service.FindByID(purchaseRequest.WorkoutID)
+	if err != nil {
+		return NewErrorResponse(ctx, statusCode, err.Error())
+	}
+
+	// TODO: Implement payment processing logic here
+
+	id, statusCode, err := h.service.Copy(purchaseRequest.WorkoutID, jwtClaims.UserID)
+	if err != nil {
+		return NewErrorResponse(ctx, statusCode, err.Error())
+	}
+
+	return NewSuccessResponse(ctx, statusCode, "workout copied successfully", map[string]int{"id": id})
 }
